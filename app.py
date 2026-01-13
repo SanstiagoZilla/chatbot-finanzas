@@ -14,23 +14,22 @@ from core.analisis_proyecto import (
 st.set_page_config(page_title="Chatbot Finanzas", layout="wide")
 
 st.title("📊 Chatbot de Análisis Financiero")
-st.caption("Carga mensual + análisis automático")
+st.subheader("📥 Cargar base histórica (MASTERDATA)")
 
-BASE_HISTORICA = "MASTERDATA_PROYECTO.xlsx"
+base_file = st.file_uploader(
+    "Sube el archivo MASTERDATA (histórico)",
+    type=["xlsx"]
+)
 
-# -----------------------------
-# Cargar base histórica
-# -----------------------------
-if not os.path.exists(BASE_HISTORICA):
-    st.error("No se encontró MASTERDATA_PROYECTO.xlsx")
+if not base_file:
+    st.warning("Por favor sube el archivo MASTERDATA para comenzar")
     st.stop()
 
-df_base = pd.read_excel(BASE_HISTORICA)
+df_base = pd.read_excel(base_file)
 df_base = normalizar_columnas(df_base)
 df_base = asegurar_columnas(df_base)
 
-st.success("Base histórica cargada")
-
+st.success("Base histórica cargada correctamente")
 # -----------------------------
 # Subir mes nuevo
 # -----------------------------
