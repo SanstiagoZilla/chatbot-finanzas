@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 # -----------------------------
 # IMPORTAR CORE
 # -----------------------------
-sys.path.append(os.path.join(os.path.dirname(__file__), "core"))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(BASE_DIR, "core"))
 
 from analisis_proyecto import (
     normalizar_columnas,
@@ -72,7 +73,7 @@ else:
     df = df_base.copy()
 
 # -----------------------------
-# ANÁLISIS
+# ANÁLISIS GLOBAL
 # -----------------------------
 totales = calcular_totales_periodo(df)
 variaciones = calcular_variaciones_periodo(totales)
@@ -82,11 +83,16 @@ variaciones = calcular_variaciones_periodo(totales)
 # -----------------------------
 st.subheader("📅 3. Selección de periodo")
 
+periodos_disponibles = totales.index.tolist()
+
 periodo = st.selectbox(
     "Selecciona el periodo para el análisis",
-    totales.index.tolist(),
-    index=len(totales) - 1
+    periodos_disponibles,
+    index=len(periodos_disponibles) - 1
 )
+
+# Data filtrada al periodo
+df_periodo = df[df["PERIODO"] == periodo]
 
 # -----------------------------
 # KPIs
@@ -114,25 +120,25 @@ col3.metric(
 )
 
 # -----------------------------
-# GRÁFICAS (SEPARADAS)
+# GRÁFICAS
 # -----------------------------
 st.subheader("📈 Evolución temporal")
 
-# --- L14 ---
+# L14
 fig1, ax1 = plt.subplots()
 totales["L14"].plot(marker="o", ax=ax1)
 ax1.set_title("L14 por periodo")
 ax1.grid(True)
 st.pyplot(fig1)
 
-# --- VOL ---
+# VOL
 fig2, ax2 = plt.subplots()
 totales["VOL"].plot(marker="o", ax=ax2)
 ax2.set_title("Volumen por periodo")
 ax2.grid(True)
 st.pyplot(fig2)
 
-# --- COSTO UNITARIO ---
+# COSTO UNITARIO
 fig3, ax3 = plt.subplots()
 totales["COSTO_UNITARIO"].plot(marker="o", ax=ax3)
 ax3.set_title("Costo unitario por periodo")
@@ -140,37 +146,47 @@ ax3.grid(True)
 st.pyplot(fig3)
 
 # -----------------------------
-# INSIGHTS AUTOMÁTICOS
+# INSIGHTS
 # -----------------------------
 st.subheader("🧠 Insights automáticos")
 
 var_cu = variaciones.loc[periodo, "COSTO_UNITARIO"]
 
 if var_cu > 0:
-    st.warning("🔺 El costo unitario aumentó vs mes anterior. Revisar mix y variaciones.")
+    st.warning(
+        f"🔺 El costo unitario aumentó {var_cu:.2f}% vs mes anterior. "
+        "Revisar mix, volúmenes y variaciones."
+    )
 else:
-    st.success("🔻 El costo unitario disminuyó. Buen control de costos.")
-
-df_periodo = df[df["PERIODO"] == periodo]
+    st.success(
+        f"🔻 El costo unitario disminuyó {abs(var_cu):.2f}%. "
+        "Buen control de costos."
+    )
 
 # -----------------------------
-# CHAT
+# CHATBOT
 # -----------------------------
 st.subheader("💬 Pregunta al chatbot")
 
 pregunta = st.text_input(
-    "Ejemplos: 'Top idh', 'variacion l14', 'costo unitario ultimo'"
+    "Ejemplos: 'Top IDH', 'Variación L14', 'Costo unitario del mes'"
 )
 
 if pregunta:
-    respuesta = responder_pregunta(
-    df_periodo,
-    totales.loc[[periodo]],
-    variaciones.loc[[periodo]],
-    pregunta,
-    periodo=periodo
-)
-    st.text_area("Respuesta", respuesta, height=200)
+    try:
+        respuesta = responder_pregunta(
+            df=df_periodo,
+            totales=totales.loc[[periodo]],
+            variaciones=variaciones.loc[[periodo]],
+            pregunta=pregunta,
+            periodo=periodo
+        )
+
+        st.text_area("Respuesta", respuesta, height=200)
+
+    except Exception as e:
+        st.error("Ocurrió un error procesando la pregunta")
+        st.exception(e)
 
 # -----------------------------
 # CORREO
@@ -182,9 +198,12 @@ correo = generar_reporte_correo(
     totales=totales,
     periodo=periodo
 )
+
 st.text_area("Correo generado", correo, height=300)
 
+# -----------------------------
 # BOTÓN OUTLOOK
+# -----------------------------
 st.markdown("### 📤 Enviar por Outlook")
 
 correo_encoded = correo.replace("\n", "%0D%0A")
@@ -204,4 +223,5 @@ Abrir Outlook
 """
 
 st.markdown(outlook_link, unsafe_allow_html=True)
+
 
