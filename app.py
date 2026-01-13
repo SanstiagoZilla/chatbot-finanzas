@@ -151,6 +151,8 @@ if var_cu > 0:
 else:
     st.success("🔻 El costo unitario disminuyó. Buen control de costos.")
 
+df_periodo = df[df["PERIODO"] == periodo]
+
 # -----------------------------
 # CHAT
 # -----------------------------
@@ -161,7 +163,13 @@ pregunta = st.text_input(
 )
 
 if pregunta:
-    respuesta = responder_pregunta(df, totales, variaciones, pregunta)
+    respuesta = responder_pregunta(
+    df_periodo,
+    totales.loc[[periodo]],
+    variaciones.loc[[periodo]],
+    pregunta,
+    periodo=periodo
+)
     st.text_area("Respuesta", respuesta, height=200)
 
 # -----------------------------
@@ -169,8 +177,11 @@ if pregunta:
 # -----------------------------
 st.subheader("📧 Correo automático")
 
-correo = generar_reporte_correo(variaciones, totales)
-
+correo = generar_reporte_correo(
+    variaciones=variaciones,
+    totales=totales,
+    periodo=periodo
+)
 st.text_area("Correo generado", correo, height=300)
 
 # BOTÓN OUTLOOK
@@ -193,3 +204,4 @@ Abrir Outlook
 """
 
 st.markdown(outlook_link, unsafe_allow_html=True)
+
