@@ -91,7 +91,6 @@ periodo = st.selectbox(
     index=len(periodos_disponibles) - 1
 )
 
-# Data filtrada al periodo
 df_periodo = df[df["PERIODO"] == periodo]
 
 # -----------------------------
@@ -124,21 +123,18 @@ col3.metric(
 # -----------------------------
 st.subheader("📈 Evolución temporal")
 
-# L14
 fig1, ax1 = plt.subplots()
 totales["L14"].plot(marker="o", ax=ax1)
 ax1.set_title("L14 por periodo")
 ax1.grid(True)
 st.pyplot(fig1)
 
-# VOL
 fig2, ax2 = plt.subplots()
 totales["VOL"].plot(marker="o", ax=ax2)
 ax2.set_title("Volumen por periodo")
 ax2.grid(True)
 st.pyplot(fig2)
 
-# COSTO UNITARIO
 fig3, ax3 = plt.subplots()
 totales["COSTO_UNITARIO"].plot(marker="o", ax=ax3)
 ax3.set_title("Costo unitario por periodo")
@@ -178,8 +174,7 @@ if pregunta:
             df=df_periodo,
             totales=totales.loc[[periodo]],
             variaciones=variaciones.loc[[periodo]],
-            pregunta=pregunta,
-            periodo=periodo
+            pregunta=pregunta
         )
 
         st.text_area("Respuesta", respuesta, height=200)
@@ -223,6 +218,7 @@ Abrir Outlook
 """
 
 st.markdown(outlook_link, unsafe_allow_html=True)
+
 
 
 
