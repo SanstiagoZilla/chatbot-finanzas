@@ -174,13 +174,106 @@ pregunta = st.text_input(
 
 if pregunta:
     try:
-        respuesta = responder_pregunta(
-            df=df_periodo,
-            totales=totales.loc[[periodo]],
-            variaciones=variaciones.loc[[periodo]],
-            pregunta=pregunta,
-            periodo=periodo
+        def responder_pregunta(df, totales, variaciones, pregunta, periodo):
+    """
+    Responde preguntas sobre el periodo seleccionado.
+    Función blindada: nunca rompe la app.
+    """
+
+    # -----------------------------
+    # Normalización de entrada
+    # -----------------------------
+    if df is None or df.empty:
+        return f"No hay datos disponibles para el periodo {periodo}."
+
+    if not isinstance(pregunta, str) or pregunta.strip() == "":
+        return "Por favor escribe una pregunta válida."
+
+    q = pregunta.lower()
+
+    # -----------------------------
+    # Validaciones básicas
+    # -----------------------------
+    columnas_df = df.columns.tolist()
+    columnas_totales = totales.columns.tolist()
+
+    # -----------------------------
+    # TOP IDH
+    # -----------------------------
+    if "top" in q and "idh" in q:
+        if "IDH" not in columnas_df or "L14" not in columnas_df:
+            return "No se encontraron las columnas necesarias para analizar IDH."
+
+        top = (
+            df.groupby("IDH", as_index=False)["L14"]
+            .sum()
+            .sort_values("L14", ascending=False)
+            .head(5)
         )
+
+        if top.empty:
+            return f"No hay datos suficientes para calcular el Top IDH en {periodo}."
+
+        texto = f"Top 5 IDH por L14 en {periodo}:\n"
+        for i, row in top.iterrows():
+            texto += f"- {row['IDH']}: {row['L14']:,.0f}\n"
+
+        return texto
+
+    # -----------------------------
+    # VARIACIÓN L14
+    # -----------------------------
+    if "variacion" in q and "l14" in q:
+        if "L14" not in columnas_totales:
+            return "No se encontró información de L14."
+
+        valor = variaciones.iloc[0]["L14"]
+        signo = "aumentó" if valor > 0 else "disminuyó"
+
+        return (
+            f"La variación de L14 en {periodo} {signo} "
+            f"{abs(valor):.2f}% frente al mes anterior."
+        )
+
+    # -----------------------------
+    # COSTO UNITARIO
+    # -----------------------------
+    if "costo" in q and "unitario" in q:
+        if "COSTO_UNITARIO" not in columnas_totales:
+            return "No se encontró información de costo unitario."
+
+        cu = totales.iloc[0]["COSTO_UNITARIO"]
+
+        return (
+            f"El costo unitario en {periodo} fue "
+            f"{cu:,.2f}."
+        )
+
+    # -----------------------------
+    # VOLUMEN
+    # -----------------------------
+    if "volumen" in q or "vol" in q:
+        if "VOL" not in columnas_totales:
+            return "No se encontró información de volumen."
+
+        vol = totales.iloc[0]["VOL"]
+
+        return (
+            f"El volumen total en {periodo} fue "
+            f"{vol:,.0f}."
+        )
+
+    # -----------------------------
+    # RESPUESTA POR DEFECTO
+    # -----------------------------
+    return (
+        "No entendí la pregunta 🤔\n\n"
+        "Puedes intentar con:\n"
+        "- 'Top IDH'\n"
+        "- 'Variación L14'\n"
+        "- 'Costo unitario del mes'\n"
+        "- 'Volumen del mes'"
+    )
 
         st.text_area("Respuesta", respuesta, height=200)
 
@@ -223,5 +316,6 @@ Abrir Outlook
 """
 
 st.markdown(outlook_link, unsafe_allow_html=True)
+
 
 
